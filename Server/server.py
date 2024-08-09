@@ -86,7 +86,9 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
+
 '''
+테스트
 curl http://127.0.0.1:8000/publish
 mosquitto_sub -h 54.180.165.1 -t kingo/response
 '''
