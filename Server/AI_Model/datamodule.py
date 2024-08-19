@@ -25,7 +25,7 @@ class Dataset:
     def _data_preprocessing(self, data):
         # 스케일링
         X, y = data
-        scaler = MinMaxScaler() #모든 특징을 0~1사이로 변환
+        scaler = MinMaxScaler()
         X_scaled = scaler.fit_transform(X)
         y_scaled = scaler.fit_transform(y)  # 필요에 따라 라벨도 스케일링
 
