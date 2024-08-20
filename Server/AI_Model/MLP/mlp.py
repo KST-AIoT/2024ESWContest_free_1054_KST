@@ -38,11 +38,12 @@ class MLP:
         self.classifier.add(layers.Dense(self.config['hidden_size'], activation='relu'))
         self.classifier.add(layers.BatchNormalization())
         self.classifier.add(layers.Dropout(0.5))
-        self.classifier.add(layers.Dense(self.config['output_size'], activation='softmax'))
+        self.classifier.add(layers.Dense(self.config['output_size'], activation='linear'))
         self.classifier.compile(optimizer='adam',
-                                loss='categorical_crossentropy',
-                                metrics=['accuracy'])
+                                loss='mean_squared_error',
+                                metrics=['mean_absolute_error'])
         print("-------------------------MLP-------------------------\n", end='')
         self.train()
         self.inference()
+        self.classifier.save('MLP/mlp_model.h5')
         return self.test()

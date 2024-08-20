@@ -1,7 +1,8 @@
 import time
 from utils import set_seed, save_test_result
 from datamodule import Dataset
-from mlp import MLP
+from MLP.mlp import MLP
+
 
 def main():
     set_seed(42)
