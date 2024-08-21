@@ -3,6 +3,12 @@ import asyncio
 from fastapi import FastAPI
 from gmqtt import Client as MQTTClient
 from contextlib import asynccontextmanager
+import json
+
+from AI_Model.KNN.predict_model import predict_knn
+from AI_Model.MLP.predict_model import predict_mlp
+from AI_Model.RandomForest.predict_model import predict_rf
+
 
 app = FastAPI()
 logger = logging.getLogger(__name__)
@@ -10,7 +16,7 @@ logger = logging.getLogger(__name__)
 MQTT_HOST = "54.180.165.1"
 MQTT_PORT = 1883
 KEEPALIVE = 60
-MQTT_TOPIC = "kingo/test"
+MQTT_TOPIC = "kingo/server"
 
 mqtt_client = None
 
@@ -30,8 +36,24 @@ async def on_connect(client, flags, rc, properties):
 async def on_message(client, topic, payload, qos, properties):
     message = payload.decode()
     logger.info(f"Received message on topic {topic}: {message}")
-    client.publish("kingo/response", "ok", qos=1)
 
+    try:
+        data = json.loads(message)
+        frequency = data.get("frequency")
+        phase = data.get("phase")
+        magnitude = data.get("magnitude")
+        temperature = data.get("temperature")
+
+        # 모델 예측 
+        # KNN 모델 사용
+        prediction = predict_knn(frequency, phase, magnitude, temperature)
+
+        # 예측 결과를 JSON 형식으로 변환하여 kingo/response로 발행
+        client.publish("kingo/response", json.dumps(prediction), qos=1)
+
+    except Exception as e:
+        logger.error(f"Failed to process message: {e}")
+        client.publish("kingo/response", json.dumps({"error": str(e)}), qos=1)
 '''
 MQTT클라이언트 초기화 및 연결
 '''
@@ -90,5 +112,7 @@ if __name__ == "__main__":
 '''
 테스트
 curl http://127.0.0.1:8000/publish
+mosquitto_sub -h 54.180.165.1 -t kingo/response
+mosquitto_pub -h 54.180.165.1 -t kingo/server -m "{\"frequency\": 5000, \"phase\": 45, \"magnitude\": 1.2, \"temperature\": 25.5}"
 mosquitto_sub -h 54.180.165.1 -t kingo/response
 '''
