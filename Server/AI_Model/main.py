@@ -1,9 +1,11 @@
 import time
-from utils import set_seed, save_test_result
+from utils import set_seed
 from datamodule import Dataset
 from MLP.mlp import MLP
 from RandomForest.RF import RF
 from KNN.KNN import KNN
+from LinearRegression.LR import LR
+
 def main():
     set_seed(42)
     dataset = Dataset()
@@ -46,6 +48,13 @@ def main():
     result = KNN(knn_config, dataset).run()
     print("Model Execution time : {:.4f} sec".format(
         time.time() - running_start3))
+    print()
+
+    #선형 회귀 모델 학습
+    running_start4 = time.time()
+    result = LR(dataset).run()
+    print("Model Execution time : {:.4f} sec".format(
+        time.time() - running_start4))
     print()
 
 if __name__ == "__main__":
