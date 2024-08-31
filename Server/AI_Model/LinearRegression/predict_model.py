@@ -1,9 +1,9 @@
-from keras.models import load_model
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
+import joblib
 
-def predict_mlp(frequency, phase, magnitude, temperature):
+def predict_lr(frequency, phase, magnitude, temperature):
     # 입력 데이터 수집
     #frequency = float(input("Enter frequency: "))
     #phase = float(input("Enter phase: "))
@@ -14,7 +14,7 @@ def predict_mlp(frequency, phase, magnitude, temperature):
     input_data = np.array([[frequency, phase, magnitude, temperature]])
 
     # 모델 로드
-    model = load_model('AI_Model/LinearRegression/LR_model.joblib')
+    model = joblib.load('AI_Model/LinearRegression/LR_model.joblib')
 
     # 데이터 전처리 - 학습 시 사용한 스케일러로 스케일링
     data = pd.read_csv('../data/dataset.csv')  # 실제 데이터셋 파일 경로 사용
@@ -42,6 +42,5 @@ def predict_mlp(frequency, phase, magnitude, temperature):
         'N_percent': y_pred[0][1],
         'P_percent': y_pred[0][2]
     }
-
 if __name__ == "__main__":
-    predict_mlp()
+    predict_lr()

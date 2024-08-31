@@ -4,19 +4,24 @@ from fastapi import FastAPI
 from gmqtt import Client as MQTTClient
 from contextlib import asynccontextmanager
 import json
+import numpy as np
+import pandas as pd
+from portenta_data import portenta_data
+from calculate_impedance import calculate_impedance
+from process_and_process import process_and_predict
 
-from AI_Model.KNN.predict_model import predict_knn
-from AI_Model.MLP.predict_model import predict_mlp
 from AI_Model.RandomForest.predict_model import predict_rf
 
+obj_dict = {} #id : 데이터 
 
 app = FastAPI()
+logging.basicConfig(level=logging.INFO)  # 로그 레벨 설정
 logger = logging.getLogger(__name__)
 
 MQTT_HOST = "54.180.165.1"
 MQTT_PORT = 1883
 KEEPALIVE = 60
-MQTT_TOPIC = "kingo/server"
+MQTT_TOPIC = "KST/request"
 
 mqtt_client = None
 
@@ -31,6 +36,8 @@ async def on_connect(client, flags, rc, properties):
 
 '''
 브로커로부터 메시지를 수신했을 때 호출되는 콜백 함수 
+KST/request 
+KST/DATA
 : kingo/response 주제로 "ok"메시지 발행
 '''
 async def on_message(client, topic, payload, qos, properties):
@@ -38,19 +45,61 @@ async def on_message(client, topic, payload, qos, properties):
     logger.info(f"Received message on topic {topic}: {message}")
 
     try:
-        data = json.loads(message)
-        frequency = data.get("frequency")
-        phase = data.get("phase")
-        magnitude = data.get("magnitude")
-        temperature = data.get("temperature")
+        data = json.loads(message)    
+        req_time = data.get("request_time")
+        req_type = str(data.get("request_type")) #0이면 학습용 1이면 추론용   
+        frequencies = data.get("frequencies")
+        target_frequency = data.get("target_frequency")
+        v_0 = data.get("v_0")
+        v_1 = data.get("v_1")
+        time = data.get("times")
+        temperature = data.get("temperatures")
+        resistance = data.get("resistances")
+        client_id = req_time + req_type
+        
+
+        #아이디 확인해서 이미 존재하면 데이터 넣기 / 존재하지 않으면 새로운 객체 생성
+        if client_id in obj_dict:
+            #이미 존재하면
+            portenta_obj = obj_dict.get(client_id)
+            result = portenta_obj.add_data(target_frequency, v_0, v_1, temperature, resistance, time)
+        else:
+            #존재하지 않으면
+            obj_dict[client_id] = portenta_data(req_time, req_type, frequencies)
+            portenta_obj = obj_dict[client_id]
+            result = portenta_obj.add_data(target_frequency, v_0, v_1, temperature, resistance, time)
+        #끝까지 처리 완료 -> json / 처리 완료 X -> None
+        if result:
+                print(f"Complete data for client_id {client_id}: {result}")
+                del obj_dict[client_id]  # 데이터 처리가 완료되었으므로 객체 삭제
+                #데이터 변환 및 예측 처리 
+                prediction = process_and_predict(result[3], result[0], result[1], result[2], result[5], result[4])
+                print("prediction_suc")
+                client.publish("kingo/response", json.dumps(prediction), qos=1)
+
+
+        '''
+        #학습용
+        if type == 0: 
+            #csv 파일로 변환
+            df = pd.DataFrame(frequencies, columns=['frequency'])
+            df['phase'] = phases
+            df['magnitude'] = magnitudes
+            df['temperature'] = temperatures
+
+            df.to_csv("./AI_Model/data/dataset.csv", index=False, mode='a') #덮어쓰기가 안됨 
+            client.publish("kingo/response", json.dumps({"request_time" : request_time, "type" : type, "frequencies" : frequencies}), qos=1)
+        elif type == 1:
+            #추론
+            client.publish("kingo/response", json.dumps("results"), qos=1)
 
         # 모델 예측 
         # KNN 모델 사용
-        prediction = predict_knn(frequency, phase, magnitude, temperature)
+        #prediction = predict_knn(frequency, phase, magnitude, temperature)
 
         # 예측 결과를 JSON 형식으로 변환하여 kingo/response로 발행
-        client.publish("kingo/response", json.dumps(prediction), qos=1)
-
+        #client.publish("kingo/response", json.dumps("results"), qos=1)
+        '''
     except Exception as e:
         logger.error(f"Failed to process message: {e}")
         client.publish("kingo/response", json.dumps({"error": str(e)}), qos=1)
@@ -113,6 +162,5 @@ if __name__ == "__main__":
 테스트
 curl http://127.0.0.1:8000/publish
 mosquitto_sub -h 54.180.165.1 -t kingo/response
-mosquitto_pub -h 54.180.165.1 -t kingo/server -m "{\"frequency\": 5000, \"phase\": 45, \"magnitude\": 1.2, \"temperature\": 25.5}"
-mosquitto_sub -h 54.180.165.1 -t kingo/response
+mosquitto_pub -h 54.180.165.1 -t KST/request -m "{\"temperatures\": [25, 30], \"frequencies\": [5000, 6000], \"v_0\": [1.1, 1.2], \"v_1\": [0.9, 1.0], \"times\": [1000, 2000], \"resistances\": [10, 20], \"K_percent\": [10, 15], \"N_percent\": [5, 10], \"P_percent\": [3, 7]}
 '''

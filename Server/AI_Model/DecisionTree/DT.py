@@ -1,24 +1,25 @@
-import pandas as pd
+from sklearn.tree import DecisionTreeRegressor
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
 import joblib
+from utils import calculate_score
 
-
-#다중 선형 회귀
-class LR:
-    def __init__(self, dataset):
+#회귀 트리
+class DT:
+    def __init__(self, config, dataset):
         self.X_train = dataset.X_train
         self.X_test = dataset.X_test
         self.X_inference = dataset.X_inference
         self.y_train = dataset.y_train
         self.y_test = dataset.y_test
-        self.classifier = LinearRegression()
-
+        self.classifier = DecisionTreeRegressor(min_samples_leaf=config['min_samples_leaf'], 
+                                                max_depth=config['max_depth'], 
+                                                random_state=config['random_state'])
     def train(self):
         self.classifier.fit(self.X_train, self.y_train)
     def test(self):
         y_test_pred = self.classifier.predict(self.X_test)
+
+        # 회귀 평가 지표로 성능 평가
         mse = np.mean((self.y_test - y_test_pred) ** 2)
         r2 = self.classifier.score(self.X_test, self.y_test)
         
@@ -32,8 +33,8 @@ class LR:
         return y_pred
     
     def run(self):
-        print("-------------------------Linear Regression-------------------------\n", end='')
+        print("-------------------------Decision Tree-------------------------\n", end='')
         self.train()
         self.inference()
-        joblib.dump(self.classifier, 'LinearRegression/LR_model.joblib')  
+        joblib.dump(self.classifier, 'DecisionTree/dt_model.joblib')  
         return self.test()

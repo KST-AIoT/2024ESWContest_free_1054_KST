@@ -3,6 +3,7 @@ import numpy as np
 import joblib
 from utils import calculate_score
 
+#랜덤 포레스트 회귀
 class RF:
     def __init__(self, config, dataset):
         self.X_train = dataset.X_train
@@ -15,14 +16,18 @@ class RF:
         self.classifier.fit(self.X_train, self.y_train)
     def test(self):
         y_test_pred = self.classifier.predict(self.X_test)
-        y_test_pred = np.argmax(y_test_pred, axis = 1)
-        self.y_test = np.argmax(self.y_test, axis = 1)
-        result = calculate_score(self.y_test, y_test_pred)
-        print(f'Test Accuracy for Random Forest is {result["accuracy"][0]:.4f}')
+
+        # 회귀 평가 지표로 성능 평가
+        mse = np.mean((self.y_test - y_test_pred) ** 2)
+        r2 = self.classifier.score(self.X_test, self.y_test)
+        
+        print(f"Mean Squared Error: {mse:.4f}")
+        print(f"R^2 Score: {r2:.4f}")
+        
+        result = {'mse': mse, 'r2': r2}
         return result
     def inference(self):
         y_pred = self.classifier.predict(self.X_inference)
-        y_pred = np.argmax(y_pred, axis=1)
         return y_pred
     
     def run(self):

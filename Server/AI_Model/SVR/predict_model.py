@@ -3,7 +3,7 @@ from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 import joblib
 
-def predict_knn(frequency, phase, magnitude, temperature):
+def predict_svr(frequency, phase, magnitude, temperature):
     # 입력 데이터 수집
     #frequency = float(input("Enter frequency: "))
     #phase = float(input("Enter phase: "))
@@ -14,10 +14,10 @@ def predict_knn(frequency, phase, magnitude, temperature):
     input_data = np.array([[frequency, phase, magnitude, temperature]])
 
     # 모델 로드
-    model = joblib.load('./AI_Model/KNN/knn_model.joblib')
+    model = joblib.load('AI_Model/SVR/svr_model.joblib')
 
     # 데이터 전처리 - 학습 시 사용한 스케일러로 스케일링
-    data = pd.read_csv('./AI_Model/data/dataset.csv')  # 실제 데이터셋 파일 경로 사용
+    data = pd.read_csv('../data/dataset.csv')  # 실제 데이터셋 파일 경로 사용
     X = data[['frequency', 'phase', 'magnitude', 'temperature']]
     y = data[['K_percent', 'N_percent', 'P_percent']]
 
@@ -42,6 +42,5 @@ def predict_knn(frequency, phase, magnitude, temperature):
         'N_percent': y_pred[0][1],
         'P_percent': y_pred[0][2]
     }
-
 if __name__ == "__main__":
-    predict_knn()
+    predict_svr()
