@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from portenta_data import portenta_data
 from calculate_impedance import calculate_impedance
-from process_and_process import process_and_predict
 
 
 from AI_Model.LinearRegression.predict_model import predict_lr
@@ -63,14 +62,12 @@ async def on_message(client, topic, payload, qos, properties):
 
 
 
-
         #아이디 확인해서 이미 존재하면 데이터 넣기 / 존재하지 않으면 새로운 객체 생성 후 데이터 넣기
         if client_id not in obj_dict:
             #존재하지 않으면
             obj_dict[client_id] = portenta_data(req_time, req_type, frequencies)
         portenta_obj = portenta_obj = obj_dict.get(client_id)
         result = portenta_obj.add_data(target_frequency, v_0, v_1, temperature, resistance, time)
-
 
 
         #끝까지 처리 완료 -> json(raw데이터) / 처리 완료 X -> None
@@ -83,20 +80,17 @@ async def on_message(client, topic, payload, qos, properties):
             final_resistance = result[4]
             final_time = result[5]
 
-
             #데이터 처리
             final_magnitude, final_phase = portenta_obj.proceess_data()
-            if req_type == 1:
+            if portenta_obj.req_type == "1":
                 print(f"Complete data(1) for client_id {client_id}: {result}")
-                del obj_dict[client_id]  # 데이터 처리가 완료되었으므로 객체 삭제
-                #예측
                 #예측 수행 : 선형회귀 -> 오류 발생. 데이터 형식 바꿔줘야함
-                prediction = predict_lr(final_freq, final_phase, final_magnitude, final_temperature)      
+                prediction = predict_lr(final_freq, final_phase, final_magnitude, final_temperature)     
+                print(prediction) 
                 print("prediction_suc")
-
                 client.publish("kingo/response", json.dumps(prediction), qos=1)
 
-            elif req_type == "0":
+            elif portenta_obj.req_type == "0":
                 print(f"Complete data(0) for client_id {client_id}")
 
                 #raw 데이터 저장
@@ -181,5 +175,19 @@ if __name__ == "__main__":
 테스트
 curl http://127.0.0.1:8000/publish
 mosquitto_sub -h 54.180.165.1 -t kingo/response
-mosquitto_pub -h 54.180.165.1 -t KST/request -m "{\"temperatures\": [25, 30], \"frequencies\": [5000, 6000], \"v_0\": [1.1, 1.2], \"v_1\": [0.9, 1.0], \"times\": [1000, 2000], \"resistances\": [10, 20], \"K_percent\": [10, 15], \"N_percent\": [5, 10], \"P_percent\": [3, 7]}
+
+-- type: 0 --
+mosquitto_pub -h 54.180.165.1 -t KST/request -m "{\"req_time\": \"2024-09-01\", \"req_type\": 0, \"frequencies\": [100, 200], \"target_frequency\": 100, \"v_0\": [1.0, 2.0, 3.0, 4.0], \"v_1\": [1.1, 2.1, 3.1, 4.1], \"times\": 1000, \"temperatures\": 25, \"resistances\": 10}"
+
+
+mosquitto_pub -h 54.180.165.1 -t KST/request -m "{\"req_time\": \"2024-09-01\", \"req_type\": 0, \"frequencies\": [100, 200], \"target_frequency\": 200, \"v_0\": [1.0, 2.0, 3.0, 4.0], \"v_1\": [1.1, 2.1, 3.1, 4.1], \"times\": 2000, \"temperatures\": 26, \"resistances\": 20}"
+
+
+-- type: 1 --
+mosquitto_pub -h 54.180.165.1 -t KST/request -m "{\"req_time\": \"2024-09-01\", \"req_type\": 1, \"frequencies\": [100, 200], \"target_frequency\": 100, \"v_0\": [1.0, 2.0, 3.0, 4.0], \"v_1\": [1.1, 2.1, 3.1, 4.1], \"times\": 1000, \"temperatures\": 25, \"resistances\": 10}"
+
+
+mosquitto_pub -h 54.180.165.1 -t KST/request -m "{\"req_time\": \"2024-09-01\", \"req_type\": 1, \"frequencies\": [100, 200], \"target_frequency\": 200, \"v_0\": [1.0, 2.0, 3.0, 4.0], \"v_1\": [1.1, 2.1, 3.1, 4.1], \"times\": 2000, \"temperatures\": 26, \"resistances\": 20}"
+
+
 '''

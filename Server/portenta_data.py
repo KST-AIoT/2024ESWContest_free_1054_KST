@@ -5,9 +5,9 @@ from calculate_impedance import calculate_impedance
 
 #[0번째 , 1번째, , ...,]
 class portenta_data:
-    def __init__(self, request_time, request_type, frequencies):
-        self.request_time = request_time
-        self.reqeust_type = request_type
+    def __init__(self, req_time, req_type, frequencies):
+        self.req_time = req_time
+        self.req_type = req_type
         self.frequencies_list = set(frequencies) #주파수 목록
         self.frequencies = []
         self.v_0 = []
@@ -32,7 +32,7 @@ class portenta_data:
         magnitude_list = []
         phase_list = []
         for i in range(len(self.frequencies)):
-            magnitude, phase = calculate_impedance(self.frequencies[i], self.v_0[i], self.v_1[i], self.resistances[i], times[i])
+            magnitude, phase = calculate_impedance(self.frequencies[i], self.v_0[i], self.v_1[i], self.resistances[i], self.times[i])
             magnitude_list.append(magnitude)
             phase_list.append(phase)
         return magnitude_list, phase_list
