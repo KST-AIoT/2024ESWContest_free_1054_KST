@@ -6,7 +6,7 @@ from LinearRegression.LR import LR
 from DecisionTree.DT import DT
 from SVR.SVR import SVRModel
 
-def main():
+def train_model():
     set_seed(42)
     dataset = Dataset()
 
@@ -57,4 +57,4 @@ def main():
     
 
 if __name__ == "__main__":
-    main()
+    train_model()
