@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 MQTT_HOST = "54.180.165.1"
 MQTT_PORT = 1883
 KEEPALIVE = 60
-MQTT_TOPIC = "KST/request"
+MQTT_TOPIC = "KST/REQUEST"
 
 mqtt_client = None
 
