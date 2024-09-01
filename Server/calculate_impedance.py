@@ -46,10 +46,11 @@ def calculate_impedance(frequency, v_0, v_1, resistance, sampling_time):
 
     # 임피던스의 크기와 위상 각
     water_z_polar = cmath.polar(water_z)
-    wz_deg = np.rad2deg(water_z_polar[1])
+    magnitude = water_z_polar[0]
+    phase = np.rad2deg(water_z_polar[1])
 
     # 출력 결과
-    return water_z_polar, wz_deg
+    return magnitude, phase
 '''
 # 예시 사용
 frequency = 100

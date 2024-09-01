@@ -24,4 +24,6 @@ class portenta_data:
         if not self.frequencies_list:  # frequencies_list가 비어있으면 모든 데이터를 받은 것
             return self.frequencies, self.v_0, self.v_1, self.temperatures, self.resistances, self.times
         return None
+    def return_rawdata(self):
+        return self.frequencies, self.v_0, self.v_1, self.temperatures, self.resistances, self.times
         

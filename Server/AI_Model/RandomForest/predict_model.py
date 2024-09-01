@@ -17,7 +17,7 @@ def predict_rf(frequency, phase, magnitude, temperature):
     model = joblib.load('AI_Model/RandomForest/rf_model.joblib')
 
     # 데이터 전처리 - 학습 시 사용한 스케일러로 스케일링
-    data = pd.read_csv('../data/dataset.csv')  # 실제 데이터셋 파일 경로 사용
+    data = pd.read_csv('AI_Model/data/dataset')  # 실제 데이터셋 파일 경로 사용
     X = data[['frequency', 'phase', 'magnitude', 'temperature']]
     y = data[['K_percent', 'N_percent', 'P_percent']]
 

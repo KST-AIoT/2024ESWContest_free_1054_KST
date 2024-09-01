@@ -46,8 +46,8 @@ async def on_message(client, topic, payload, qos, properties):
 
     try:
         data = json.loads(message)    
-        req_time = data.get("request_time")
-        req_type = str(data.get("request_type")) #0이면 학습용 1이면 추론용   
+        req_time = str(data.get("req_time"))
+        req_type = str(data.get("req_type")) #0이면 학습용 1이면 추론용   
         frequencies = data.get("frequencies")
         target_frequency = data.get("target_frequency")
         v_0 = data.get("v_0")
@@ -55,8 +55,7 @@ async def on_message(client, topic, payload, qos, properties):
         time = data.get("times")
         temperature = data.get("temperatures")
         resistance = data.get("resistances")
-        client_id = req_time + req_type
-        
+        client_id = req_time + '_' + req_type
 
         #아이디 확인해서 이미 존재하면 데이터 넣기 / 존재하지 않으면 새로운 객체 생성
         if client_id in obj_dict:
@@ -69,14 +68,42 @@ async def on_message(client, topic, payload, qos, properties):
             portenta_obj = obj_dict[client_id]
             result = portenta_obj.add_data(target_frequency, v_0, v_1, temperature, resistance, time)
         #끝까지 처리 완료 -> json / 처리 완료 X -> None
-        if result:
-                print(f"Complete data for client_id {client_id}: {result}")
-                del obj_dict[client_id]  # 데이터 처리가 완료되었으므로 객체 삭제
-                #데이터 변환 및 예측 처리 
-                prediction = process_and_predict(result[3], result[0], result[1], result[2], result[5], result[4])
-                print("prediction_suc")
-                client.publish("kingo/response", json.dumps(prediction), qos=1)
-
+        if req_type == "1" and result:
+            print("start_1")
+            print(f"Complete data(1) for client_id {client_id}: {result}")
+            del obj_dict[client_id]  # 데이터 처리가 완료되었으므로 객체 삭제
+            #데이터 변환 및 예측 처리 
+            prediction = process_and_predict(result[3], result[0], result[1], result[2], result[5], result[4])
+            print("prediction_suc")
+            client.publish("kingo/response", json.dumps(prediction), qos=1)
+        elif req_type == "0" and result:
+            print("start_2")
+            print(f"Complete data(2) for client_id {client_id}")
+            #원래 데이터 저장
+            frequencies_list, v_0_list, v_1_list, temperatures_list, resistances_list, times_list = portenta_obj.return_rawdata()
+            raw_filename = "./AI_Model/data/" + client_id + "_rawdata.csv"
+            df_raw = pd.DataFrame(frequencies_list, columns=['frequency'])
+            df_raw['v_0'] = v_0_list
+            df_raw['v_1'] = v_1_list
+            df_raw['temperature'] = temperatures_list
+            df_raw['resistance'] = resistances_list
+            df_raw['time'] = times_list
+            df_raw.to_csv(raw_filename, index=False, mode='a')
+            #데이터 가공
+            magnitude_list = []
+            phase_list = []
+            for i in range(len(frequencies)):
+                magnitude, phase = calculate_impedance(frequencies_list[i], v_0_list[i], v_1_list[i], resistances_list[i], times_list[i])
+                magnitude_list.append(magnitude)
+                phase_list.append(phase)
+            #가공된 데이터 저장
+            filename = "./AI_Model/data/" + client_id + "_dataset.csv"
+            df = pd.DataFrame(result[0], columns=['frequency'])
+            df['phase'] = phase_list
+            df['magnitude'] = magnitude_list
+            df['temperature'] = result[3]
+            del obj_dict[client_id] # 데이터 처리가 완료되었으므로 객체 삭제 -> csv 파일에 저장
+            df.to_csv(filename, index=False, mode='a')
 
         '''
         #학습용
