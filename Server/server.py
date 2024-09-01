@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 MQTT_HOST = "54.180.165.1"
 MQTT_PORT = 1883
 KEEPALIVE = 60
-MQTT_TOPIC = "KST/REQUEST"
+MQTT_TOPIC = "KST/DATA"
 
 mqtt_client = None
 
@@ -51,13 +51,13 @@ async def on_message(client, topic, payload, qos, properties):
         #초기 데이터 저장
         req_time = str(data.get("req_time"))
         req_type = str(data.get("req_type")) #0이면 학습용 1이면 추론용   
-        frequencies = data.get("frequencies")
-        target_frequency = data.get("target_frequency")
+        frequencies = data.get("frequency")
+        target_frequency = data.get("target_freq")
         v_0 = data.get("v_0")
         v_1 = data.get("v_1")
-        time = data.get("times")
-        temperature = data.get("temperatures")
-        resistance = data.get("resistances")
+        time = data.get("time")
+        temperature = data.get("temperature")
+        resistance = data.get("resistance")
         client_id = req_time + '_' + req_type
 
 
@@ -77,7 +77,8 @@ async def on_message(client, topic, payload, qos, properties):
             final_v0 = result[1]
             final_v1 = result[2]
             final_temperature = result[3]
-            final_resistance = result[4]
+            final_resistance = 103.3 #todo: 저항값 변환하기
+            #final_resistance = result[4]
             final_time = result[5]
 
             #데이터 처리

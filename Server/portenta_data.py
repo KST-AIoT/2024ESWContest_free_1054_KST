@@ -22,7 +22,8 @@ class portenta_data:
             self.v_0.append(v_0)
             self.v_1.append(v_1)
             self.temperatures.append(temperature)
-            self.resistances.append(resistance)
+            self.resistances.append(103.3) #todo: 저항값 변환하기
+            #self.resistances.append(resistance)
             self.times.append(time)
 
         if not self.frequencies_list:  # frequencies_list가 비어있으면 모든 데이터를 받은 것
