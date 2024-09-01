@@ -1,14 +1,10 @@
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
-import pandas as pd
 import joblib
+from AI_Model.Scaler import Scaler
 
 def predict_lr(frequency, phase, magnitude, temperature):
-    # 입력 데이터 수집
-    #frequency = float(input("Enter frequency: "))
-    #phase = float(input("Enter phase: "))
-    #magnitude = float(input("Enter magnitude: "))
-    #temperature = float(input("Enter temperature: "))
+    # Scaler 클래스 인스턴스 생성 (데이터 로드 및 스케일러 준비)
+    scaler = Scaler()
 
     # 입력 데이터를 배열로 변환
     input_data = np.array([[frequency, phase, magnitude, temperature]])
@@ -16,31 +12,25 @@ def predict_lr(frequency, phase, magnitude, temperature):
     # 모델 로드
     model = joblib.load('AI_Model/LinearRegression/LR_model.joblib')
 
-    # 데이터 전처리 - 학습 시 사용한 스케일러로 스케일링
-    data = pd.read_csv('AI_Model/data/dataset.csv')  # 실제 데이터셋 파일 경로 사용
-    X = data[['frequency', 'phase', 'magnitude', 'temperature']]
-    y = data[['K_percent', 'N_percent', 'P_percent']]
-
-    scaler_X = MinMaxScaler()
-    scaler_X.fit(X)
-    input_data_scaled = scaler_X.transform(input_data)
+    # 입력 데이터 스케일링
+    print("suc1")
+    input_data_scaled = scaler.transform_input(input_data)
 
     # 예측
+    print("suc2")
     y_pred_scaled = model.predict(input_data_scaled)
 
-    # 출력 데이터를 원래 스케일로 변환
-    scaler_y = MinMaxScaler()
-    scaler_y.fit(y)
-    y_pred = scaler_y.inverse_transform(y_pred_scaled)
+    # 출력 데이터를 원래 값으로 변환
+    print("suc3")
+    y_pred = scaler.inverse_transform_output(y_pred_scaled)
 
-    # 예측 결과 출력
-    #print(f'Predicted K_percent: {y_pred[0][0]:.2f}%')
-    #print(f'Predicted N_percent: {y_pred[0][1]:.2f}%')
-    #print(f'Predicted P_percent: {y_pred[0][2]:.2f}%')
+    # 예측 결과 반환
     return {
         'K_percent': y_pred[0][0],
         'N_percent': y_pred[0][1],
         'P_percent': y_pred[0][2]
     }
+
 if __name__ == "__main__":
-    predict_lr()
+    prediction = predict_lr([100, 200, 300, 400], [30, 40, 50, 60], [1.2, 1.3, 1.4, 1.5], [25, 26, 27, 28])
+    print(prediction)

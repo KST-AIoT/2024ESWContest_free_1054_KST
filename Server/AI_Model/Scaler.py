@@ -1,37 +1,26 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
 
-class Dataset:
+class Scaler:
     def __init__(self):
         # 데이터 로드 및 전처리
-        train_data, test_data = self._load_data()
-
-        self.X_train, self.y_train = self._data_preprocessing(train_data)
-        self.X_test, self.y_test = self._data_preprocessing(test_data)
-        self.X_inference = self.X_test 
+        self.X, self.y = self._load_data()
+        self.scaler_X = self._scaler_x()  # 입력 데이터 스케일러 생성
+        self.scaler_y = self._scaler_y()  # 출력 데이터 스케일러 생성
 
     def _load_data(self):
         # 데이터 로드
-        data = pd.read_csv('data/dataset1.csv')
-        print(data.head())
-        print(data.describe())
-        print(data.isnull().sum())
-
+        data = pd.read_csv('AI_Model/data/dataset1.csv')
         # 데이터 변환: 4개의 행이 하나의 라벨에 해당하도록 변환
         X, y = self._transform_data(data)
-
-        # 데이터셋 분할 (80% 훈련, 20% 테스트)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        
-        return (X_train, y_train), (X_test, y_test)
+        return X, y
 
     def _transform_data(self, data):
         X = []
         y = []
 
-        for i in range(0, len(data), 4):  # 4개의 행마다 그룹화(예시)
+        for i in range(0, len(data), 4):  # 4개의 행마다 그룹화
             sample_features = data.iloc[i:i+4][['frequency', 'phase', 'magnitude', 'temperature']].values.flatten()
             X.append(sample_features)
 
@@ -40,16 +29,24 @@ class Dataset:
             y.append(label)
 
         return np.array(X), np.array(y)
-    
-    def _data_preprocessing(self, data):
-        X, y = data
 
+    def _scaler_x(self):
         # 입력 데이터 스케일링
         scaler_X = MinMaxScaler()
-        X_scaled = scaler_X.fit_transform(X)
+        scaler_X.fit(self.X)
+        return scaler_X
 
+    def _scaler_y(self):
         # 출력 라벨 스케일링
         scaler_y = MinMaxScaler()
-        y_scaled = scaler_y.fit_transform(y)
+        scaler_y.fit(self.y)
+        return scaler_y
 
-        return X_scaled, y_scaled
+    def transform_input(self, input_data):
+        # 입력 데이터를 스케일링
+        input_df = pd.DataFrame([input_data.flatten()], columns=[f'feature_{i+1}' for i in range(input_data.size)])
+        return self.scaler_X.transform(input_df)
+
+    def inverse_transform_output(self, output_data):
+        # 출력 데이터를 원래 값으로 변환
+        return self.scaler_y.inverse_transform(output_data)
