@@ -29,11 +29,19 @@ class portenta_data:
         if not self.frequencies_list:  # frequencies_list가 비어있으면 모든 데이터를 받은 것
             return self.frequencies, self.v_0, self.v_1, self.temperatures, self.resistances, self.times #raw 데이터 반환
         return None
-    def proceess_data(self):
+    def process_data(self):
         magnitude_list = []
         phase_list = []
+        source_voltage_list = [] 
+        water_voltage_list = []
+        resistance_voltage_list = []
+        circuit_current_list = []
         for i in range(len(self.frequencies)):
-            magnitude, phase = calculate_impedance(self.frequencies[i], self.v_0[i], self.v_1[i], self.resistances[i], self.times[i])
+            magnitude, phase, source_voltage, water_voltage, resistance_voltage, circuit_current = calculate_impedance(self.frequencies[i], self.v_0[i], self.v_1[i], self.resistances[i], self.times[i])
             magnitude_list.append(magnitude)
             phase_list.append(phase)
-        return magnitude_list, phase_list
+            source_voltage_list.append(source_voltage)
+            water_voltage_list.append(water_voltage)
+            resistance_voltage_list.append(resistance_voltage)
+            circuit_current_list.append(circuit_current)
+        return magnitude_list, phase_list, source_voltage_list, water_voltage_list, resistance_voltage_list, circuit_current_list

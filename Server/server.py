@@ -7,7 +7,6 @@ import json
 import numpy as np
 import pandas as pd
 from portenta_data import portenta_data
-from calculate_impedance import calculate_impedance
 
 
 from AI_Model.LinearRegression.predict_model import predict_lr
@@ -82,7 +81,7 @@ async def on_message(client, topic, payload, qos, properties):
             final_time = result[5]
 
             #데이터 처리
-            final_magnitude, final_phase = portenta_obj.proceess_data()
+            final_magnitude, final_phase, final_source_voltage, fianl_water_voltage, final_resistance_voltage, final_circuit_current = portenta_obj.process_data()
             if portenta_obj.req_type == "1":
                 print(f"Complete data(1) for client_id {client_id}: {result}")
                 #예측 수행 : 선형회귀 -> 오류 발생. 데이터 형식 바꿔줘야함
@@ -111,6 +110,11 @@ async def on_message(client, topic, payload, qos, properties):
                 df['phase'] = final_phase
                 df['magnitude'] = final_magnitude
                 df['temperature'] = final_temperature
+                df['source_voltage'] = final_source_voltage
+                df['water_voltage'] = fianl_water_voltage
+                df['resistance_voltage'] = final_resistance_voltage
+                df['circuit_current'] = final_circuit_current
+                
                 df.to_csv(filename, index=False, mode='a')
             del obj_dict[client_id] # 데이터 처리가 완료되었으므로 객체 삭제
 
