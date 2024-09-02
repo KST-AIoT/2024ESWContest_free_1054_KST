@@ -13,7 +13,6 @@ from AI_Model.LinearRegression.predict_model import predict_lr
 from AI_Model.RandomForest.predict_model import predict_rf
 
 obj_dict = {} #id : 데이터 
-
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)  # 로그 레벨 설정
 logger = logging.getLogger(__name__)
@@ -24,6 +23,7 @@ KEEPALIVE = 60
 MQTT_TOPIC = "KST/DATA"
 RESPONSE_TOPIC = "KST/response"
 TIMEOUT_SECONDS = 5  #초
+count = 1
 
 mqtt_client = None
 
@@ -99,7 +99,8 @@ async def on_message(client, topic, payload, qos, properties):
                 print(f"Complete data(0) for client_id {client_id}")
 
                 #raw 데이터 저장
-                raw_filename = "./AI_Model/data/" + client_id + "_rawdata.csv"
+                #raw_filename = "./AI_Model/data/" + client_id + "_rawdata.csv"
+                raw_filename = "./AI_Model/data/rawdata" + count + ".csv" #todo
                 df_raw = pd.DataFrame(final_freq, columns=['frequency'])
                 df_raw['v_0'] = final_v0
                 df_raw['v_1'] = final_v1
@@ -110,7 +111,8 @@ async def on_message(client, topic, payload, qos, properties):
 
 
                 #가공된 데이터 저장
-                filename = "./AI_Model/data/" + client_id + "_dataset.csv"
+                #filename = "./AI_Model/data/" + client_id + "_dataset.csv"
+                filename = "./AI_Model/data/dataset" + count + ".csv" #todo
                 df = pd.DataFrame(final_freq, columns=['frequency'])
                 df['phase'] = final_phase
                 df['magnitude'] = final_magnitude
@@ -121,6 +123,7 @@ async def on_message(client, topic, payload, qos, properties):
                 df['circuit_current'] = final_circuit_current
 
                 df.to_csv(filename, index=False, mode='a')
+                count += 1
             del obj_dict[client_id] # 데이터 처리가 완료되었으므로 객체 삭제
 
     except Exception as e:
@@ -164,7 +167,7 @@ async def send_alert_message():
     for client_id, portenta_obj in obj_dict.items():
         time_diff = datetime.now() - portenta_obj.last_edit_time
         if time_diff.total_seconds() > TIMEOUT_SECONDS:
-            mqtt_client.publish(RESPONSE_TOPIC, json.dumps({client_id:portenta_obj.frequencies_list }), qos=1)
+            mqtt_client.publish(RESPONSE_TOPIC, json.dumps({"request_time": portenta_obj.req_time, "request_type": portenta_obj.req_type, "frequencies": portenta_obj.frequencies_list}), qos=1)
         logger.info(f"Alert message sent: {client_id}")
 
 
