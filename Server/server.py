@@ -22,7 +22,7 @@ MQTT_PORT = 1883
 KEEPALIVE = 60
 MQTT_TOPIC = "KST/DATA"
 RESPONSE_TOPIC = "KST/response"
-TIMEOUT_SECONDS = 5  #초
+TIMEOUT_SECONDS = 10  #초
 count = 1
 
 mqtt_client = None
