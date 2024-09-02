@@ -7,7 +7,7 @@ import json
 import numpy as np
 import pandas as pd
 from portenta_data import portenta_data
-
+from datetime import datetime
 
 from AI_Model.LinearRegression.predict_model import predict_lr
 from AI_Model.RandomForest.predict_model import predict_rf
@@ -23,7 +23,7 @@ MQTT_PORT = 1883
 KEEPALIVE = 60
 MQTT_TOPIC = "KST/DATA"
 RESPONSE_TOPIC = "KST/response"
-TIMEOUT_SECONDS = 100  #초
+TIMEOUT_SECONDS = 5  #초
 
 mqtt_client = None
 
@@ -161,9 +161,11 @@ async def wait_for_message(timeout: int):
 타임아웃 시 발행할 메시지
 '''
 async def send_alert_message():
-    message = "No message received, sending alert!"
-    mqtt_client.publish(RESPONSE_TOPIC, message, qos=1)
-    logger.info(f"Alert message sent: {message}")
+    for client_id, portenta_obj in obj_dict.items():
+        time_diff = datetime.now() - portenta_obj.last_edit_time
+        if time_diff.total_seconds() > TIMEOUT_SECONDS:
+            mqtt_client.publish(RESPONSE_TOPIC, json.dumps({client_id:portenta_obj.frequencies_list }), qos=1)
+        logger.info(f"Alert message sent: {client_id}")
 
 
 '''

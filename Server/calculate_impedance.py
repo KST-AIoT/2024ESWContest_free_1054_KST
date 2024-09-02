@@ -5,7 +5,12 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
 
+
 def calculate_impedance(frequency, v_0, v_1, resistance, sampling_time, visualize=False, plot_filename=None):
+    # 초반 50개 데이터 제거
+    v_0 = v_0[50:]
+    v_1 = v_1[50:]
+
     np_v_0 = np.array(v_0, dtype=np.float64)
     np_v_1 = np.array(v_1, dtype=np.float64)
 
@@ -33,6 +38,18 @@ def calculate_impedance(frequency, v_0, v_1, resistance, sampling_time, visualiz
     max_time = 10 * period
     mask_0 = time_axis_0 <= max_time
     mask_1 = time_axis_1 <= max_time
+    print(f"mask_0 length bf : {np.sum(mask_0)}")
+
+    min_elements = 120
+    # mask 길이 확인 및 조정
+    if np.sum(mask_0) < min_elements:
+        additional_time = (min_elements - np.sum(mask_0)) * delta_time
+        mask_0 = time_axis_0 <= (max_time + additional_time)
+    print(f"mask_0 length af : {np.sum(mask_0)}")
+
+    if np.sum(mask_1) < min_elements:
+        additional_time = (min_elements - np.sum(mask_1)) * delta_time
+        mask_1 = time_axis_1 <= (max_time + additional_time)
 
     time_axis_0_trimmed = time_axis_0[mask_0]
     time_axis_1_trimmed = time_axis_1[mask_1]
@@ -63,7 +80,7 @@ def calculate_impedance(frequency, v_0, v_1, resistance, sampling_time, visualiz
     water_voltage = (abs(params_1[0]), np.rad2deg(params_1[1]) - np.rad2deg(params_0[1]))
     resistance_voltage = (max(source_voltage[0] - water_voltage[0], 0), source_voltage[1] - water_voltage[1])
     circuit_current = (abs(resistance_voltage[0]) / resistance, resistance_voltage[1])
-    
+
     # 임피던스 계산
     water_impedance_magnitude = water_voltage[0] / circuit_current[0]
     water_impedance_phase = water_voltage[1] - circuit_current[1]

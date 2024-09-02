@@ -1,6 +1,6 @@
 import json
 from calculate_impedance import calculate_impedance 
-
+from datetime import datetime
 
 
 #[0번째 , 1번째, , ...,]
@@ -15,6 +15,7 @@ class portenta_data:
         self.temperatures = []
         self.resistances = []
         self.times = []
+        self.last_edit_time = datetime.now()
     def add_data(self, frequency, v_0, v_1, temperature, resistance, time):
         if frequency in self.frequencies_list:
             self.frequencies_list.remove(frequency)
@@ -25,6 +26,7 @@ class portenta_data:
             self.resistances.append(103.3) #todo: 저항값 변환하기
             #self.resistances.append(resistance)
             self.times.append(time)
+            self.last_edit_time = datetime.now()
 
         if not self.frequencies_list:  # frequencies_list가 비어있으면 모든 데이터를 받은 것
             return self.frequencies, self.v_0, self.v_1, self.temperatures, self.resistances, self.times #raw 데이터 반환
