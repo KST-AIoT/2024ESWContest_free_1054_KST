@@ -1,5 +1,6 @@
 name: KST
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - abseil-cpp=20211102.0=hd77b12b_0
