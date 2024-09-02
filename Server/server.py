@@ -22,9 +22,12 @@ MQTT_HOST = "54.180.165.1"
 MQTT_PORT = 1883
 KEEPALIVE = 60
 MQTT_TOPIC = "KST/DATA"
+RESPONSE_TOPIC = "KST/response"
+TIMEOUT_SECONDS = 100  #초
 
 mqtt_client = None
 
+message_received_event = asyncio.Event()
 '''
 정상 연결 시 호출되는 콜백 함수
 : MQTT TOPIC 구독
@@ -43,6 +46,8 @@ KST/DATA
 async def on_message(client, topic, payload, qos, properties):
     message = payload.decode()
     logger.info(f"Received message on topic {topic}: {message}")
+
+    message_received_event.set()
 
     try:
         data = json.loads(message)    
@@ -114,7 +119,7 @@ async def on_message(client, topic, payload, qos, properties):
                 df['water_voltage'] = fianl_water_voltage
                 df['resistance_voltage'] = final_resistance_voltage
                 df['circuit_current'] = final_circuit_current
-                
+
                 df.to_csv(filename, index=False, mode='a')
             del obj_dict[client_id] # 데이터 처리가 완료되었으므로 객체 삭제
 
@@ -138,6 +143,28 @@ async def start_mqtt_client():
         return None
 
     return mqtt_client
+
+'''
+메시지를 기다리는 함수
+'''
+async def wait_for_message(timeout: int):
+    try:
+        # 타임아웃 설정
+        await asyncio.wait_for(message_received_event.wait(), timeout)
+        logger.info("Message received within timeout.")
+        mqtt_client.publish(RESPONSE_TOPIC, "Received success", qos=1)
+    except asyncio.TimeoutError:
+        logger.warning(f"No message received in {timeout} seconds, sending alert message.")
+        await send_alert_message()
+
+'''
+타임아웃 시 발행할 메시지
+'''
+async def send_alert_message():
+    message = "No message received, sending alert!"
+    mqtt_client.publish(RESPONSE_TOPIC, message, qos=1)
+    logger.info(f"Alert message sent: {message}")
+
 
 '''
 Lifespan 이벤트 핸들러
@@ -171,10 +198,20 @@ async def publish_message():
 '''
 실행
 '''
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+async def main():
+    await start_mqtt_client()
+    while True:
+        # 이벤트 초기화
+        message_received_event.clear()
+        
+        # 메시지를 5초 동안 기다림
+        await wait_for_message(TIMEOUT_SECONDS)
+        
+        # 다음 메시지를 기다리기 전에 잠시 대기
+        await asyncio.sleep(1)
 
+if __name__ == "__main__":
+    asyncio.run(main())
 
 '''
 테스트
