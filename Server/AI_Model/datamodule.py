@@ -1,55 +1,62 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+NoOfData = 10
+DataLength = 38
+NoOfFeature = 2
+NoOfTrain = 20
+NoOfValid = 26
+Feature = ['magnitude', 'phase']
 
 class Dataset:
     def __init__(self):
         # 데이터 로드 및 전처리
-        train_data, test_data = self._load_data()
+        X_train, self.y_train, X_valid, self.y_valid = self._load_data()
 
-        self.X_train, self.y_train = self._data_preprocessing(train_data)
-        self.X_test, self.y_test = self._data_preprocessing(test_data)
-        self.X_inference = self.X_test 
-
+        self.X_train = self._data_preprocessing(X_train)
+        self.X_valid = self._data_preprocessing(X_valid)
+        return self.X_train, self.X_valid, self.y_train, self.y_valid
     def _load_data(self):
         # 데이터 로드
-        data = pd.read_csv('data/dataset1.csv')
-        print(data.head())
-        print(data.describe())
-        print(data.isnull().sum())
+        TotalData = np.zeros([NoOfData, DataLength, NoOfFeature]) # 데이터 빈집
+        TotalLabel = np.zeros((NoOfData, 3)) #K, N, P
+        #X데이터 수집
+        for i in range(NoOfData):
+            file_path = f'data/dataset{i+1}.csv'
+            data = pd.read_csv(file_path)
 
-        # 데이터 변환: 4개의 행이 하나의 라벨에 해당하도록 변환
-        X, y = self._transform_data(data)
+            #X데이터 수집
+            TotalData[i, :, 0] = data['magnitude'].values
+            TotalData[i, :, 1] = data['phase'].values
 
-        # 데이터셋 분할 (80% 훈련, 20% 테스트)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            #Y데이터 수집
+            TotalLabel[i, 0] = data['K'].values[0]
+            TotalLabel[i, 1] = data['N'].values[0]
+            TotalLabel[i, 2] = data['P'].values[0]
+
+        print(f"TotalData shape: {TotalData.shape}")
+        print(f"TotalLabel shape: {TotalLabel.shape}")
         
-        return (X_train, y_train), (X_test, y_test)
-
-    def _transform_data(self, data):
-        X = []
-        y = []
-
-        for i in range(0, len(data), 4):  # 4개의 행마다 그룹화(예시)
-            sample_features = data.iloc[i:i+4][['frequency', 'phase', 'magnitude', 'temperature']].values.flatten()
-            X.append(sample_features)
-
-            # 첫 번째 행의 라벨을 사용 (모든 행의 라벨이 동일하다고 가정)
-            label = data.iloc[i]['K_percent'], data.iloc[i]['N_percent'], data.iloc[i]['P_percent']
-            y.append(label)
-
-        return np.array(X), np.array(y)
-    
-    def _data_preprocessing(self, data):
-        X, y = data
-
-        # 입력 데이터 스케일링
+        print(TotalData)
+        # 데이터셋 분할 (80% 훈련, 20% 테스트)
+        X_train = TotalData[:NoOfTrain, :, :]
+        X_valid = TotalData[NoOfTrain:, :, :]
+        y_train = TotalLabel[:NoOfValid, :]
+        y_valid = TotalLabel[NoOfValid:, :]
+        
+        return X_train, y_train, X_valid, y_valid
+    def _data_preprocessing(self, X):
+        # 3차원 데이터를 2차원으로 변환 (samples, time steps * features)
+        n_samples, n_timesteps, n_features = X.shape
+        X_reshaped = X.reshape(-1, n_features)
+        
+        # MinMaxScaler를 적용
         scaler_X = MinMaxScaler()
-        X_scaled = scaler_X.fit_transform(X)
-
-        # 출력 라벨 스케일링
-        scaler_y = MinMaxScaler()
-        y_scaled = scaler_y.fit_transform(y)
-
-        return X_scaled, y_scaled
+        X_scaled = scaler_X.fit_transform(X_reshaped)
+        
+        # 다시 3차원으로 변환
+        X_scaled = X_scaled.reshape(n_samples, n_timesteps, n_features)
+        
+        return X_scaled
