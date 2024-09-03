@@ -8,10 +8,10 @@ import numpy as np
 import pandas as pd
 from portenta_data import portenta_data
 from datetime import datetime
+import random
+import string
 
-from AI_Model.LinearRegression.predict_model import predict_lr
-from AI_Model.RandomForest.predict_model import predict_rf
-
+from AI_Model.CNN.predict_cnn import predict_dt
 obj_dict = {} #id : 데이터 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)  # 로그 레벨 설정
@@ -89,11 +89,22 @@ async def on_message(client, topic, payload, qos, properties):
             final_magnitude, final_phase, final_source_voltage, fianl_water_voltage, final_resistance_voltage, final_circuit_current = portenta_obj.process_data()
             if portenta_obj.req_type == "1":
                 print(f"Complete data(1) for client_id {client_id}: {result}")
-                #예측 수행 : 선형회귀 -> 오류 발생. 데이터 형식 바꿔줘야함
-                prediction = predict_lr(final_freq, final_phase, final_magnitude, final_temperature)     
-                print(prediction) 
+                filename = "./AI_Model/data/inference/"
+                for i in range(n):
+                    filename += str(random.choice(string.ascii_uppercase))
+                fiilename += ".csv"
+                print(filename)
+                predict_dt(fiilename)
+                df_test = pd.DataFrame(final_freq, columns=['frequency'])
+                df_test['phase'] = final_phase
+                df_test['magnitude'] = final_magnitude
+
+                df_test.to_csv(filename, index=False, mode='a')
+
+                predict_label = predict_dt(filename)
+                #예측 수행 : CNN(분류)
                 print("prediction_suc")
-                client.publish("kingo/response", json.dumps(prediction), qos=1)
+                client.publish(RESPONSE_TOPIC, json.dumps({"prediction":predict_label}), qos=1)
 
             elif portenta_obj.req_type == "0":
                 print(f"Complete data(0) for client_id {client_id}")

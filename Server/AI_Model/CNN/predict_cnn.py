@@ -3,7 +3,6 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from pickle import load
 import torch
-from CNN import CNN
 
 DataLength = 27
 NoOfFeature = 2
@@ -15,31 +14,31 @@ def load_model(path, config):
     model.eval()  
     return model
 
-def predict_dt():
-    for i in range(25):
-        TestData = np.zeros([1, DataLength, NoOfFeature]) 
-        input_data = pd.read_csv(f"../data/dataset{i+1}.csv")
+def predict_dt(filename):
+    TestData = np.zeros([1, DataLength, NoOfFeature]) 
+    input_data = pd.read_csv(fiilename)
 
-        TestData[0, :, 0] = input_data['magnitude'][:DataLength]
-        TestData[0, :, 1] = input_data["phase"][:DataLength]
+    TestData[0, :, 0] = input_data['magnitude'][:DataLength]
+    TestData[0, :, 1] = input_data["phase"][:DataLength]
 
-        config = {
-            'learning_rate': 0.0008,
-            'epochs': 1000,
-        }
+    config = {
+        'learning_rate': 0.0008,
+        'epochs': 1000,
+    }
 
-        loaded_model = load_model('./cnn_model.pth', config)
+    loaded_model = load_model('./cnn_model.pth', config)
 
-        scaler_X = load(open('../minmax_scaler_x.pkl', 'rb'))
-        input_data_scaled = scaler_X.transform(TestData.reshape(-1, NoOfFeature)).reshape(1, DataLength, NoOfFeature)
+    scaler_X = load(open('../minmax_scaler_x.pkl', 'rb'))
+    input_data_scaled = scaler_X.transform(TestData.reshape(-1, NoOfFeature)).reshape(1, DataLength, NoOfFeature)
 
-        input_tensor = torch.tensor(input_data_scaled, dtype=torch.float32)
+    input_tensor = torch.tensor(input_data_scaled, dtype=torch.float32)
 
-        with torch.no_grad():
-            output = loaded_model(input_tensor)
-            predicted_label = torch.argmax(output, 1).item()  # 라벨은 1부터 8까지
+    with torch.no_grad():
+        output = loaded_model(input_tensor)
+        predicted_label = torch.argmax(output, 1).item()  # 라벨은 1부터 8까지
 
-        print(f'Predicted Label: {predicted_label}')
+    print(f'Predicted Label: {predicted_label}')
+    return predicted_label
 
 if __name__ == "__main__":
     predict_dt()
