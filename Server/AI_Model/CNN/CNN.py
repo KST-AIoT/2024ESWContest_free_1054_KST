@@ -1,65 +1,59 @@
-import numpy as np
-import pandas as pd
-import tensorflow as tf
-from tensorflow import keras
-import matplotlib.pyplot as plt
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
-class CNN:
-    def __init__(self, config, X_train, X_valid, y_train, y_valid):
+class CNN(nn.Module):
+    def __init__(self, config):
+        super(CNN, self).__init__()
         self.config = config
-        self.X_train = X_train
-        self.X_valid = X_valid
-        self.y_train = y_train
-        self.y_valid = y_valid
-    def build_model(self):
-        keras.backend.clear_session()
-        tf.keras.utils.set_random_seed(777)
+        self.conv1 = nn.Conv1d(in_channels=2, out_channels=16, kernel_size=3, padding='same')
+        self.conv2 = nn.Conv1d(in_channels=16, out_channels=32, kernel_size=3, padding='same')
+        self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
+        self.conv3 = nn.Conv1d(in_channels=32, out_channels=64, kernel_size=3, padding='same')
+        self.conv4 = nn.Conv1d(in_channels=64, out_channels=128, kernel_size=3, padding='same')
+        self.global_avg_pool = nn.AdaptiveAvgPool1d(1)
+        self.fc1 = nn.Linear(128, 64)
+        self.fc2 = nn.Linear(64, 64)
+        self.fc3 = nn.Linear(64, 8)  # 26개의 클래스를 예측
 
-        model = keras.Sequential()
-        model.add(keras.layers.InputLayer(shape=(self.X_train.shape[1], self.X_train.shape[2])))                                         # Input layer
-        model.add(keras.layers.Conv1D(filters=8, kernel_size=3, strides=1, padding='same', activation=keras.activations.relu))  # Convolution layer 1
-        model.add(keras.layers.Conv1D(filters=8, kernel_size=3, strides=1, padding='same', activation=keras.activations.relu))  # Convolution layer 2
-        
-        model.add(keras.layers.MaxPooling1D(pool_size=2, strides=2))                                                             # Max Pooling Layer
-        
-        model.add(keras.layers.Conv1D(filters=16, kernel_size=3, strides=1, padding='same', activation=keras.activations.relu))  # Convolution layer 3
-        model.add(keras.layers.Conv1D(filters=16, kernel_size=3, strides=1, padding='same', activation=keras.activations.relu))  # Convolution layer 4
-        
-        # Convolution/Pooling layer to Output layer
-        model.add(keras.layers.GlobalAveragePooling1D())                                                                            # Global Average Pooling (Simple Structure)
+    def forward(self, x):
+        x = x.permute(0, 2, 1)
+        x = torch.relu(self.conv1(x))
+        x = torch.relu(self.conv2(x))
+        x = self.pool(x)
+        x = torch.relu(self.conv3(x))
+        x = torch.relu(self.conv4(x))
+        x = self.global_avg_pool(x)
+        x = x.view(x.size(0), -1)
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+    
 
-        model.add(keras.layers.Dense(units=32, activation=keras.activations.relu))                                                  # Hidden Layer 1
-        model.add(keras.layers.Dense(units=32, activation=keras.activations.relu))                                                  # Hidden Layer 2
-        
-        model.add(keras.layers.Dense(units=3))                                                                                      # Output Layer with 3 units (for 3 continuous values)
+def train_cnn(config, X_train, X_valid, y_train, y_valid):
+    model = CNN(config)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
 
-        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.config['learning_rate']),
-                    loss=keras.losses.MeanSquaredError(),                     # Use MSE for regression
-                    metrics=['mae'])                                          # Mean Absolute Error for evaluation
-        return model
+    for epoch in range(config['epochs']):
+        model.train()
+        optimizer.zero_grad()
+        outputs = model(X_train)
+        loss = criterion(outputs, y_train)
+        loss.backward()
+        optimizer.step()
 
-def run(self):
-    model = self.build_model()
-    model.summary()
+        model.eval()
+        with torch.no_grad():
+            val_outputs = model(X_valid)
+            val_loss = criterion(val_outputs, y_valid)
 
-    hist = model.fit(self.X_train, self.y_train, 
-                         validation_data=(self.X_valid, self.y_valid),
-                         epochs=self.config['epochs'], verbose=1)
-    # 모델 평가
-    Loss, MAE = model.evaluate(self.X_valid, self.y_valid, verbose=0)
-    print('Final Loss and MAE: {:.4f}, {:.2f}'.format(Loss, MAE))
-    # 학습 과정에서의 손실 값 그래프
-    plt.plot(hist.history['loss'], label='Training Loss')
-    plt.plot(hist.history['val_loss'], label='Validation Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.show()
+        print(f'Epoch {epoch+1}/{config["epochs"]}, Training Loss: {loss.item():.4f}, Validation Loss: {val_loss.item():.4f}')
 
-    # 학습 과정에서의 MAE 그래프
-    plt.plot(hist.history['mae'], label='Training MAE')
-    plt.plot(hist.history['val_mae'], label='Validation MAE')
-    plt.xlabel('Epochs')
-    plt.ylabel('MAE')
-    plt.legend()
-    plt.show()
+    save_model(model, './CNN/cnn_model.pth')
+    return model
+
+def save_model(model, path):
+    torch.save(model.state_dict(), path)
+    print(f'Model saved to {path}')

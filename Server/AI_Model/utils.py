@@ -1,4 +1,3 @@
-import tensorflow as tf
 import numpy as np
 import random
 from pathlib import Path
@@ -8,7 +7,7 @@ from typing import Union, Dict, Tuple, Optional
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
-    tf.random.set_seed(seed)
+    #tf.random.set_seed(seed)
 
 #분류 모델 성능 평가(정확도, 정밀도, 재현율, F1점수)
 def calculate_score(labels, preds):
