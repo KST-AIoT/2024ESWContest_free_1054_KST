@@ -1,8 +1,9 @@
 import time
-from utils import set_seed
 from datamodule import Dataset
 from CNN.CNN import train_cnn
 import torch
+import random 
+import numpy as np
 
 def train_model():
     set_seed(42)
@@ -22,6 +23,11 @@ def train_model():
     print("Model Execution time : {:.4f} sec".format(
         time.time() - running_start))
     print()
+
+#랜덤시드 설정
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
 
 if __name__ == "__main__":
     train_model()

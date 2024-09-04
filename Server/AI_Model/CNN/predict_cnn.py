@@ -12,7 +12,7 @@ NoOfFeature = 2
 
 def load_model(path, config):
     model = CNN(config)
-    state_dict = torch.load(path, map_location=torch.device('cpu'), weights_only=True)  # GPU에서 학습한 모델을 CPU에서 로드
+    state_dict = torch.load(path, map_location=torch.device('cpu'), weights_only=True)  
     model.load_state_dict(state_dict)
     model.eval()  
     return model
@@ -31,14 +31,14 @@ def predict_dt(filename):
 
     loaded_model = load_model('./cnn_model.pth', config)
 
-    scaler_X = load(open('../minmax_scaler_x.pkl', 'rb'))
+    scaler_X = load(open('../scaler/minmax_scaler_x.pkl', 'rb'))
     input_data_scaled = scaler_X.transform(TestData.reshape(-1, NoOfFeature)).reshape(1, DataLength, NoOfFeature)
 
     input_tensor = torch.tensor(input_data_scaled, dtype=torch.float32)
 
     with torch.no_grad():
         output = loaded_model(input_tensor)
-        predicted_label = torch.argmax(output, 1).item()  # 라벨은 1부터 8까지
+        predicted_label = torch.argmax(output, 1).item()
 
     print(f'Predicted Label: {predicted_label}')
     return predicted_label
