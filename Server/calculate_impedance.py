@@ -38,14 +38,12 @@ def calculate_impedance(frequency, v_0, v_1, resistance, sampling_time, visualiz
     max_time = 10 * period
     mask_0 = time_axis_0 <= max_time
     mask_1 = time_axis_1 <= max_time
-    print(f"mask_0 length bf : {np.sum(mask_0)}")
 
     min_elements = 120
     # mask 길이 확인 및 조정
     if np.sum(mask_0) < min_elements:
         additional_time = (min_elements - np.sum(mask_0)) * delta_time
         mask_0 = time_axis_0 <= (max_time + additional_time)
-    print(f"mask_0 length af : {np.sum(mask_0)}")
 
     if np.sum(mask_1) < min_elements:
         additional_time = (min_elements - np.sum(mask_1)) * delta_time
@@ -71,25 +69,40 @@ def calculate_impedance(frequency, v_0, v_1, resistance, sampling_time, visualiz
     params_0[1] = np.deg2rad(np.rad2deg(params_0[1]) % 360)
     params_1[1] = np.deg2rad(np.rad2deg(params_1[1]) % 360)
 
-    # Bias를 제거한 상태에서의 코사인 파형 계산
-    fitted_v_0 = cos_wave(time_axis_0, params_0[0], params_0[1]) + bias_0
-    fitted_v_1 = cos_wave(time_axis_1, params_1[0], params_1[1]) + bias_1
+    # 복소수 형태로 전압 계산
+    source_voltage = cmath.rect(params_0[0], params_0[1])
+    water_voltage = cmath.rect(params_1[0], params_1[1])
+    resistance_voltage = source_voltage - water_voltage
 
-    # 전압 및 전류 계산
-    source_voltage = (params_0[0], 0)
-    water_voltage = (abs(params_1[0]), np.rad2deg(params_1[1]) - np.rad2deg(params_0[1]))
-    resistance_voltage = (max(source_voltage[0] - water_voltage[0], 0), source_voltage[1] - water_voltage[1])
-    circuit_current = (abs(resistance_voltage[0]) / resistance, resistance_voltage[1])
+    # 회로 전류 계산 (저항이 주어진 경우)
+    circuit_current = resistance_voltage / resistance
 
-    # 임피던스 계산
-    water_impedance_magnitude = water_voltage[0] / circuit_current[0]
-    water_impedance_phase = water_voltage[1] - circuit_current[1]
-    water_impedance = (water_impedance_magnitude, water_impedance_phase)
+    # 임피던스 계산 (물의 임피던스)
+    water_impedance = water_voltage / circuit_current
+
+    # 크기와 위상 각을 구한 후, 위상 조정
+    def to_magnitude_phase(complex_value, reference_phase=0):
+        magnitude, phase = cmath.polar(complex_value)
+        phase = np.rad2deg(phase) - reference_phase
+        return magnitude, phase % 360
+
+    # 모든 전압을 기준 위상으로 조정
+    source_voltage_mag, source_voltage_phase = to_magnitude_phase(source_voltage)
+    water_voltage_mag, water_voltage_phase = to_magnitude_phase(water_voltage, source_voltage_phase)
+    resistance_voltage_mag, resistance_voltage_phase = to_magnitude_phase(resistance_voltage, source_voltage_phase)
+    circuit_current_mag, circuit_current_phase = to_magnitude_phase(circuit_current, source_voltage_phase)
+    water_impedance_mag, water_impedance_phase = to_magnitude_phase(water_impedance)
+
+    # 최종적으로 source_voltage의 phase는 0이 됩니다.
+    source_voltage = (source_voltage_mag, 0)
+    water_voltage = (water_voltage_mag, water_voltage_phase)
+    resistance_voltage = (resistance_voltage_mag, resistance_voltage_phase)
+    circuit_current = (circuit_current_mag, circuit_current_phase)
 
     # 시각화 (옵션)
     if visualize:
-        sampled_time_0, sampled_fitted_v_0 = sample_points_for_fitted_curve(time_axis_0_trimmed, fitted_v_0)
-        sampled_time_1, sampled_fitted_v_1 = sample_points_for_fitted_curve(time_axis_1_trimmed, fitted_v_1)
+        sampled_time_0, sampled_fitted_v_0 = sample_points_for_fitted_curve(time_axis_0_trimmed, cos_wave(time_axis_0_trimmed, params_0[0], params_0[1]) + bias_0)
+        sampled_time_1, sampled_fitted_v_1 = sample_points_for_fitted_curve(time_axis_1_trimmed, cos_wave(time_axis_1_trimmed, params_1[0], params_1[1]) + bias_1)
 
         plt.figure(figsize=(10, 6))
         plt.plot(time_axis_0_trimmed, np_v_0_trimmed + bias_0, label='Raw v_0', marker='o')
@@ -107,7 +120,7 @@ def calculate_impedance(frequency, v_0, v_1, resistance, sampling_time, visualiz
         plt.show()
 
     # 임피던스의 크기와 위상 각 반환
-    return water_impedance_magnitude, water_impedance_phase, source_voltage, water_voltage, resistance_voltage, circuit_current
+    return water_impedance_mag, water_impedance_phase, source_voltage, water_voltage, resistance_voltage, circuit_current
 
 def trim_to_cycles(time_axis, signal, frequency, cycles=10):
     period = 1e6 / frequency
