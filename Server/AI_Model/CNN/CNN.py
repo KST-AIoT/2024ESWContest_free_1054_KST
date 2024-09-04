@@ -35,7 +35,7 @@ class CNN(nn.Module):
     
 
 def train_cnn(config, X_train, X_valid, y_train, y_valid):
-    model = CNN(config)
+    model = CNN()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
 
@@ -98,7 +98,7 @@ class CNN_LITE(nn.Module):
         x = self.fc3(x)
         return x
 def train_cnn_lite(config, X_train, X_valid, y_train, y_valid):
-    model = CNN_LITE(config)
+    model = CNN_LITE()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
 
