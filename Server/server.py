@@ -81,7 +81,7 @@ async def on_message(client, topic, payload, qos, properties):
             final_v0 = result[1]
             final_v1 = result[2]
             final_temperature = result[3]
-            final_resistance = 103.3 #todo: 저항값 변환하기
+            final_resistance = 640 #todo: 저항값 변환하기
             #final_resistance = result[4]
             final_time = result[5]
 
