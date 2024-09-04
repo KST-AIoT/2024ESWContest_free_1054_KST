@@ -12,6 +12,8 @@ import random
 import string
 
 from AI_Model.CNN.predict_cnn import predict_dt
+
+
 obj_dict = {} #id : 데이터 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)  # 로그 레벨 설정

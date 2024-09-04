@@ -67,7 +67,7 @@ class Dataset:
         X_scaled = scaler_X.transform(X_reshaped)
         X_scaled = X_scaled.reshape(num_sample, DataLength, num_feature)
 
-        dump(scaler_X, open('./minmax_scaler_x.pkl', 'wb'))
+        dump(scaler_X, open('./scaler/minmax_scaler_x.pkl', 'wb'))
 
         print("Scaled Data:")
         print(X_scaled)
