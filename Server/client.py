@@ -3,7 +3,7 @@ import asyncio
 from gmqtt import Client as MQTTClient
 import json
 import tkinter as tk
-import datetime 
+import datetime
 
 request_time = datetime.datetime.now().strftime('%m%d%H%M%S')
 frequencies = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 300, 400, 500, 600, 700, 800, 900,
@@ -73,22 +73,38 @@ KST/DISPLAY 토픽에서 메시지를 수신할 때 호출되는 함수
 async def on_message(client, topic, payload, qos, properties):
     global status_label, start_button
     message = payload.decode()
-    data = json.loads(message)
+    print(message)
+
+    try:
+        data = json.loads(message)
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to decode JSON: {e}")
+        return
+    
+    status = data.get('status')
 
     # 상태에 따라 메시지 및 색상 변경
-    if data.get('status') == "0":
+    if status == "0":
         update_status("Measuring...", "#4F4F4F")  
-    elif data.get('status') == "1":
-        update_status("Analyzing...", "#4F4F4F")  
-    elif data.get('status') == "2":
-        update_status("Analysis Complete. Processing Results...", "#4F4F4F")  
-    elif data.get('status') == "3":
-        prediction = data.get('prediction', 'No result')
-        update_status(f"Results Returned: Prediction is {prediction}", "#4F4F4F")  
+    elif status == "1":
+        update_status("Measurement Complete. Analyzing...", "#4F4F4F")  
+    elif status == "2":
+        K = str(data.get('K'))
+        N = str(data.get('N'))
+        P = str(data.get('P'))
+        irrigation_times = data.get('irrigation_times', {})
+        irrigation_time_K = irrigation_times.get('K', 'N/A')
+        irrigation_time_N = irrigation_times.get('N', 'N/A')
+        irrigation_time_P = irrigation_times.get('P', 'N/A')
+        update_status(f"Analysis Complete.\nK: {K} ppm\nN: {N} ppm\nP: {P} ppm\n"
+                      f"Irrigation time - K: {irrigation_time_K} sec, N: {irrigation_time_N} sec, P: {irrigation_time_P} sec", 
+                      "#4F4F4F")
         start_button.place(x=300, y=400)  # 버튼 다시 표시
         start_button.config(state="normal")  # 분석이 완료되면 버튼을 다시 활성화
     else:
         update_status("Unknown status", "red") 
+        start_button.place(x=300, y=400)  # 버튼 다시 표시
+        start_button.config(state="normal")  # 분석이 완료되면 버튼을 다시 활성화
 
 '''
 MQTT 클라이언트 초기화 및 연결 함수
