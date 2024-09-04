@@ -98,6 +98,7 @@ async def on_message(client, topic, payload, qos, properties):
 
         # 새로운 데이터 클라이언트가 오면 객체 생성, 기존 클라이언트면 추가
         if client_id not in obj_dict:
+            client.publish(RESPONSE_TOPIC, json.dumps({"status":"0"}), qos=1)
             obj_dict[client_id] = portenta_data(req_time, req_type, frequencies)
         portenta_obj = obj_dict.get(client_id)
 
@@ -106,6 +107,7 @@ async def on_message(client, topic, payload, qos, properties):
 
         # 데이터가 모두 모이면 처리 시작
         if result:
+            client.publish(RESPONSE_TOPIC, json.dumps({"status":"1"}), qos=1)
             # 데이터 저장
             final_freq = result[0]
             final_v0 = result[1]
@@ -147,7 +149,23 @@ async def on_message(client, topic, payload, qos, properties):
                 print("prediction success")  # 예측 성공 로그 출력
                 # predict 정보를 바탕으로 관개(양액 농도 조절)
                 irrigation_times = irrigation_control(predict_label)
+
                 # client.publish(RESPONSE_TOPIC, json.dumps(irrigation_times), qos=1)
+
+                K_irrigation = irrigation_times["K"]
+                N_irrigation = irrigation_times["N"]
+                P_irrigation = irrigation_times["P"]
+                
+                client.publish(DISPLAY_TOPIC, json.dumps({
+                                "status": "2",
+                                "K": predict_label["K"],
+                                "N": predict_label["N"],
+                                "P": predict_label["P"],
+                                "irrigation_times": irrigation_times
+                            }))
+
+                client.publish(RESPONSE_TOPIC, json.dumps(irrigation_times), qos=1)
+
             # req_type이 "0"일 때 (학습용 데이터 처리)
             elif portenta_obj.req_type == "0":
                 print(f"Complete data(0) for client_id {client_id}")
