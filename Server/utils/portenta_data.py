@@ -1,5 +1,5 @@
 import json
-from calculate_impedance import calculate_impedance 
+import calculate_impedance 
 from datetime import datetime
 
 '''

@@ -8,7 +8,8 @@ from contextlib import asynccontextmanager
 import json
 import numpy as np
 import pandas as pd
-from portenta_data import portenta_data
+
+from utils.portenta_data import portenta_data
 from datetime import datetime
 import random
 import string
@@ -30,13 +31,8 @@ model_name = 'cnn_lite_model.pth'
 current_dir = os.getcwd()
 model_path = os.path.join(current_dir, 'AI_Model', 'CNN', model_name)
 
-# 모델 구성 설정
-config = {
-    'learning_rate': 0.0008,
-    'epochs': 1000,
-}
 # CNN 모델 초기화 및 가중치 로드
-model = CNN(config)
+model = CNN()
 state_dict = torch.load(model_path, map_location=torch.device('cpu'), weights_only=True)
 model.load_state_dict(state_dict)
 model.eval()

@@ -6,10 +6,9 @@ import torch.optim as optim
 CNN 모델 정의
 '''
 class CNN(nn.Module):
-    def __init__(self, config):
+    def __init__(self):
         super(CNN, self).__init__()
         # 1D Convolutional Layers
-        self.config = config
         self.conv1 = nn.Conv1d(in_channels=2, out_channels=16, kernel_size=3, padding='same')       # convolution layer1 (입력 채널 2개, 출력 채널 16개)
         self.conv2 = nn.Conv1d(in_channels=16, out_channels=32, kernel_size=3, padding='same')      # convolution layer2 (입력 채널 16개, 출력 채널 32개)
         self.pool = nn.MaxPool1d(kernel_size=2, stride=2)                                           # MaxPooling layer (커널 크기 2, 스트라이드 2)
@@ -64,8 +63,8 @@ def save_model(model, path):
 
 
 class CNN_LITE(nn.Module):
-    def __init__(self, config):
-        super(CNN, self).__init__()
+    def __init__(self):
+        super(CNN_LITE, self).__init__()
         # 1D Convolutional Layers
         self.conv1 = nn.Conv1d(in_channels=2, out_channels=4, kernel_size=3, padding='same')        # convolution layer1 (입력 채널 2개, 출력 채널 4개)
         self.conv2 = nn.Conv1d(in_channels=4, out_channels=8, kernel_size=3, padding='same')        # convolution layer2 (입력 채널 4개, 출력 채널 8개)
