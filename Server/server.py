@@ -89,12 +89,11 @@ async def on_message(client, topic, payload, qos, properties):
             final_magnitude, final_phase, final_source_voltage, fianl_water_voltage, final_resistance_voltage, final_circuit_current = portenta_obj.process_data()
             if portenta_obj.req_type == "1":
                 print(f"Complete data(1) for client_id {client_id}: {result}")
-                filename = "./AI_Model/data/inference/"
-                for i in range(n):
-                    filename += str(random.choice(string.ascii_uppercase))
-                fiilename += ".csv"
-                print(filename)
-                predict_dt(fiilename)
+                filename = "../data/inference/"
+                for i in range(10):
+                    filename = filename + str(random.choice(string.ascii_uppercase))
+                filename = filename + ".csv"
+                
                 df_test = pd.DataFrame(final_freq, columns=['frequency'])
                 df_test['phase'] = final_phase
                 df_test['magnitude'] = final_magnitude

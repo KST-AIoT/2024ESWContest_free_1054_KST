@@ -3,6 +3,9 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from pickle import load
 import torch
+import random
+import string
+from CNN import CNN
 
 DataLength = 27
 NoOfFeature = 2
@@ -16,7 +19,7 @@ def load_model(path, config):
 
 def predict_dt(filename):
     TestData = np.zeros([1, DataLength, NoOfFeature]) 
-    input_data = pd.read_csv(fiilename)
+    input_data = pd.read_csv(filename)
 
     TestData[0, :, 0] = input_data['magnitude'][:DataLength]
     TestData[0, :, 1] = input_data["phase"][:DataLength]
