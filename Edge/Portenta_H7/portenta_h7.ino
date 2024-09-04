@@ -5,8 +5,8 @@
 #include <ArduinoJson.h>
 
 // Before use, change the WIFI INFO and MQTT Broker Server IP
-#define DEFINED_SSID "ID"
-#define DEFINED_PASS "PASSWORD"
+#define DEFINED_SSID "WIFI_SSID"
+#define DEFINED_PASS "WIFI_PASSWORD"
 #define DEFINED_SERV "SERV_IP"
 
 #define NUM_FREQ    1
