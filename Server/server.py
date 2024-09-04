@@ -90,7 +90,7 @@ async def on_message(client, topic, payload, qos, properties):
         # 새로운 데이터 클라이언트가 오면 객체 생성, 기존 클라이언트면 추가
         if client_id not in obj_dict:
             obj_dict[client_id] = portenta_data(req_time, req_type, frequencies)
-        portenta_obj = portenta_obj = obj_dict.get(client_id)
+        portenta_obj = obj_dict.get(client_id)
         
         # 데이터를 추가하고 완료 여부 확인
         result = portenta_obj.add_data(target_frequency, v_0, v_1, temperature, resistance, time)
@@ -158,7 +158,6 @@ async def on_message(client, topic, payload, qos, properties):
                 df['resistance_voltage'] = final_resistance_voltage
                 df['circuit_current'] = final_circuit_current
                 df.to_csv(filename, index=False, mode='a')
-                count += 1
             del obj_dict[client_id] # 데이터 처리가 완료된 객체는 삭제
 
     except Exception as e:
@@ -176,7 +175,6 @@ async def start_mqtt_client():
 
     try:
         await mqtt_client.connect(MQTT_HOST, MQTT_PORT, keepalive=KEEPALIVE)        # MQTT 서버에 연결
-    except Exception as e:
     except Exception as e:
         logger.error(f"Failed to connect to MQTT broker: {e}")                      # 연결 실패 시 예외 처리
         return None
