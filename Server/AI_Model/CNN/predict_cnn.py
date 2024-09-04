@@ -5,7 +5,7 @@ from pickle import load
 import torch
 import random
 import string
-from CNN import CNN
+from .CNN import CNN
 
 DataLength = 27
 NoOfFeature = 2

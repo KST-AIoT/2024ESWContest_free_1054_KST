@@ -196,23 +196,6 @@ async def lifespan(app: FastAPI):
 app.router.lifespan_context = lifespan #시작과 종료시점 제어
 
 '''
-HTTP GET: root('/')
-'''
-@app.get("/")
-async def read_root():
-    return {"message": "Hello, FastAPI with MQTT"}
-
-'''
-HTTP GET: ('/publish')
-요청 들어오면 "Triggered by Server" 메시지를 kingo/response로 발행
-메시지가 발행되었다는 상태 반환
-'''
-@app.get("/publish")
-async def publish_message():
-    mqtt_client.publish("kingo/response", "Triggered by Server", qos=1)
-    return {"status": "Message published"}
-
-'''
 실행
 '''
 async def main():
@@ -229,24 +212,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-'''
-테스트
-curl http://127.0.0.1:8000/publish
-mosquitto_sub -h 54.180.165.1 -t kingo/response
-
--- type: 0 --
-mosquitto_pub -h 54.180.165.1 -t KST/request -m "{\"req_time\": \"2024-09-01\", \"req_type\": 0, \"frequencies\": [100, 200], \"target_frequency\": 100, \"v_0\": [1.0, 2.0, 3.0, 4.0], \"v_1\": [1.1, 2.1, 3.1, 4.1], \"times\": 1000, \"temperatures\": 25, \"resistances\": 10}"
-
-
-mosquitto_pub -h 54.180.165.1 -t KST/request -m "{\"req_time\": \"2024-09-01\", \"req_type\": 0, \"frequencies\": [100, 200], \"target_frequency\": 200, \"v_0\": [1.0, 2.0, 3.0, 4.0], \"v_1\": [1.1, 2.1, 3.1, 4.1], \"times\": 2000, \"temperatures\": 26, \"resistances\": 20}"
-
-
--- type: 1 --
-mosquitto_pub -h 54.180.165.1 -t KST/request -m "{\"req_time\": \"2024-09-01\", \"req_type\": 1, \"frequencies\": [100, 200], \"target_frequency\": 100, \"v_0\": [1.0, 2.0, 3.0, 4.0], \"v_1\": [1.1, 2.1, 3.1, 4.1], \"times\": 1000, \"temperatures\": 25, \"resistances\": 10}"
-
-
-mosquitto_pub -h 54.180.165.1 -t KST/request -m "{\"req_time\": \"2024-09-01\", \"req_type\": 1, \"frequencies\": [100, 200], \"target_frequency\": 200, \"v_0\": [1.0, 2.0, 3.0, 4.0], \"v_1\": [1.1, 2.1, 3.1, 4.1], \"times\": 2000, \"temperatures\": 26, \"resistances\": 20}"
-
-
-'''
