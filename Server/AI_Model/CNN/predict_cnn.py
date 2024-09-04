@@ -5,7 +5,7 @@ from pickle import load
 import torch
 import random
 import string
-import CNN
+import os
 
 DataLength = 27                                 # 각 데이터의 길이(총 27개의 주파수 데이터 측정)
 NoOfFeature = 2                                 # 각 데이터의 특징(magnitude, phase)
@@ -45,9 +45,12 @@ def predict_dt(model, filename):
     TestData[0, :, 0] = input_data['magnitude'][:DataLength]
     TestData[0, :, 1] = input_data["phase"][:DataLength]
 
+    # 현재 파일의 절대 경로를 기준으로 상대 경로를 처리
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    scaler_path = os.path.join(current_dir, '../scaler/minmax_scaler_x.pkl')
 
     # 스케일러를 로드하고 데이터 스케일링
-    scaler_X = load(open('../scaler/minmax_scaler_x.pkl', 'rb'))
+    scaler_X = load(open(scaler_path, 'rb'))
     input_data_scaled = scaler_X.transform(TestData.reshape(-1, NoOfFeature)).reshape(1, DataLength, NoOfFeature)
 
     # 스케일링된 데이터를 텐서로 변환
@@ -56,10 +59,17 @@ def predict_dt(model, filename):
 
     with torch.no_grad():
         output = model(input_tensor)
+        print(output)
         predicted_label_index = torch.argmax(output, 1).item()
         predicted_label = label_to_conditions(predicted_label_index)
     print(f'Predicted Label: {predicted_label}')
     return predicted_label
 
 if __name__ == "__main__":
-    predict_dt()
+    # predict_dt()
+    # 현재 파일의 절대 경로를 기준으로 상대 경로를 처리
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    scaler_path = os.path.join(current_dir, '../scaler/minmax_scaler_x.pkl')
+
+    # 스케일러를 로드하고 데이터 스케일링
+    scaler_X = load(open(scaler_path, 'rb'))

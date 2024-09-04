@@ -1,6 +1,14 @@
 import json
-import calculate_impedance 
+import sys
+import os
 from datetime import datetime
+
+# 현재 작업 디렉토리를 sys.path에 추가
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_dir)
+
+from calculate_impedance import calculate_impedance
+
 
 '''
     Portenta 데이터를 관리하는 클래스.

@@ -100,8 +100,8 @@ class Dataset:
         dump(scaler_X, open('./scaler/minmax_scaler_x.pkl', 'wb'))          
 
         print("Scaled Data:")
-        print(X_scaled)
-        print(y)
+        # print(X_scaled)
+        # print(y)
 
         return X_scaled, y
 
