@@ -26,22 +26,23 @@ app = FastAPI()  # FastAPI 애플리케이션 생성
 logging.basicConfig(level=logging.INFO)  # 로그 레벨 설정
 logger = logging.getLogger(__name__)  # 로거 설정
 
-model_name = 'cnn_model.pth'
+model_name = 'cnn_lite_model.pth'
 
 # 현재 작업 디렉토리 얻기
 current_dir = os.getcwd()
 model_path = os.path.join(current_dir, 'AI_Model', 'CNN', model_name)
 
 # CNN 모델 초기화 및 가중치 로드
-model = CNN()
+model = CNN_LITE()
 state_dict = torch.load(model_path, map_location=torch.device('cpu'), weights_only=True)
 model.load_state_dict(state_dict)
 model.eval()
 
-MQTT_HOST = "54.180.165.1"
+MQTT_HOST = "HOST"
 MQTT_PORT = 1883
 KEEPALIVE = 60
 MQTT_TOPIC = "KST/DATA"  # 예측 결과 데이터 발신 토픽
+IRRIGATION_TOPIC = "KST/IRRIGATION"  # 관개 제어 발신 토픽
 RESPONSE_TOPIC = "KST/REQUEST"  # 양액 분석 데이터 수신 토픽
 DISPLAY_TOPIC = "KST/DISPLAY"  # 디스플레이, 디버그 용 발신 토픽
 TIMEOUT_SECONDS = 30  # 타임아웃 시간 설정(30초)
@@ -55,9 +56,11 @@ message_received_event = asyncio.Event()  # 메시지 수신을 감지하는 이
 : KST/DATA 구독
 '''
 
+
 async def on_connect(client, flags, rc, properties):
     logger.info("Connected")
     client.subscribe(MQTT_TOPIC, qos=1)
+
 
 '''
 MQTT 브로커로부터 메시지를 수신했을 때 호출되는 함수
@@ -91,14 +94,14 @@ async def on_message(client, topic, payload, qos, properties):
         time = data.get("time")
         temperature = data.get("temperature")
         # resistance = data.get("resistance")
-        resistance = 640 # 포텐셔미터 제작 보류로 인한 저항값 세팅
+        resistance = 640  # 포텐셔미터 제작 보류로 인한 저항값 세팅
 
         # 구분용 client id
         client_id = req_time + '_' + req_type
 
         # 새로운 데이터 클라이언트가 오면 객체 생성, 기존 클라이언트면 추가
         if client_id not in obj_dict:
-            client.publish(RESPONSE_TOPIC, json.dumps({"status":"0"}), qos=1)
+            client.publish(RESPONSE_TOPIC, json.dumps({"status": "0"}), qos=1)
             obj_dict[client_id] = portenta_data(req_time, req_type, frequencies)
         portenta_obj = obj_dict.get(client_id)
 
@@ -107,7 +110,7 @@ async def on_message(client, topic, payload, qos, properties):
 
         # 데이터가 모두 모이면 처리 시작
         if result:
-            client.publish(RESPONSE_TOPIC, json.dumps({"status":"1"}), qos=1)
+            client.publish(RESPONSE_TOPIC, json.dumps({"status": "1"}), qos=1)
             # 데이터 저장
             final_freq = result[0]
             final_v0 = result[1]
@@ -152,17 +155,19 @@ async def on_message(client, topic, payload, qos, properties):
 
                 # client.publish(RESPONSE_TOPIC, json.dumps(irrigation_times), qos=1)
 
-                K_irrigation = irrigation_times["K"]
-                N_irrigation = irrigation_times["N"]
-                P_irrigation = irrigation_times["P"]
-                
+                client.publish(IRRIGATION_TOPIC, json.dumps({
+                    "N": irrigation_times["N"],
+                    "P": irrigation_times["P"],
+                    "K": irrigation_times["K"]
+                }))
+
                 client.publish(DISPLAY_TOPIC, json.dumps({
-                                "status": "2",
-                                "K": predict_label["K"],
-                                "N": predict_label["N"],
-                                "P": predict_label["P"],
-                                "irrigation_times": irrigation_times
-                            }))
+                    "status": "2",
+                    "N": predict_label["N"],
+                    "P": predict_label["P"],
+                    "K": predict_label["K"],
+                    "irrigation_times": irrigation_times
+                }))
 
                 client.publish(RESPONSE_TOPIC, json.dumps(irrigation_times), qos=1)
 
