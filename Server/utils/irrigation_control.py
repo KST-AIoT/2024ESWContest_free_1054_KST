@@ -1,4 +1,4 @@
-def irrigation_control(estimate_ppm, target_ppm={"N": 400, "P": 100, "K": 200}):
+def irrigation_control(estimate_ppm, target_ppm={"N": 800, "P": 100, "K": 400}):
     '''
     이 함수는 estimate_ppm과 target_ppm 값을 비교하여 모터를 제어하는 기능을 합니다.
 
@@ -12,7 +12,7 @@ def irrigation_control(estimate_ppm, target_ppm={"N": 400, "P": 100, "K": 200}):
         - N: 질산칼슘 (Nitrate Calcium) - 기본값: 400 ppm
         - P: 제이인산암모늄 (Diammonium Phosphate) - 기본값: 100 ppm
         - K: 황산칼륨 (Potassium Sulfate) - 기본값: 200 ppm
-    :return: 각 성분에 대해 모터가 작동할 시간(초) 값을 담은 딕셔너리
+    :return: 각 성분에 대해 모터가 작동할 시간(밀리초) 값을 담은 딕셔너리
     '''
 
     # 각 성분에 대한 모터 가동 시간 (초)
@@ -21,17 +21,17 @@ def irrigation_control(estimate_ppm, target_ppm={"N": 400, "P": 100, "K": 200}):
     # N (질산칼슘) 모터 가동 시간 계산
     if estimate_ppm["N"] < target_ppm["N"]:
         deficit_n = target_ppm["N"] - estimate_ppm["N"]
-        motor_runtime["N"] = deficit_n / 100  # 100ppm 당 1초
+        motor_runtime["N"] = 1000 * deficit_n / 20  # 100ppm 당 5초
 
     # P (제이인산암모늄) 모터 가동 시간 계산
     if estimate_ppm["P"] < target_ppm["P"]:
         deficit_p = target_ppm["P"] - estimate_ppm["P"]
-        motor_runtime["P"] = deficit_p / 100  # 100ppm 당 1초
+        motor_runtime["P"] = 1000 * deficit_p / 20  # 100ppm 당 5초
 
     # K (황산칼륨) 모터 가동 시간 계산
     if estimate_ppm["K"] < target_ppm["K"]:
         deficit_k = target_ppm["K"] - estimate_ppm["K"]
-        motor_runtime["K"] = deficit_k / 100  # 100ppm 당 1초
+        motor_runtime["K"] = 1000 * deficit_k / 20  # 100ppm 당 5초
 
     # 모터 가동 시간을 반환
     return motor_runtime

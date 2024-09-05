@@ -18,8 +18,8 @@ def train_model():
     y_train = torch.tensor(y_train, dtype=torch.long)                   # 라벨 데이터를 텐서로 변환 (long 타입)
 
     config = {
-        'learning_rate': 0.0008,  # 학습률 낮춤
-        'epochs': 2000,  # 에포크 수 증가
+        'learning_rate': 0.01,  # 학습률 낮춤
+        'epochs': 1000,  # 에포크 수 증가
     }
 
     # CNN 모델 학습
