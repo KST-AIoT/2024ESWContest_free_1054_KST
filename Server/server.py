@@ -2,7 +2,7 @@ import logging
 import asyncio
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from gmqtt import Client as MQTTClient
 from contextlib import asynccontextmanager
 import json
@@ -268,6 +268,85 @@ async def lifespan(app: FastAPI):
 
 
 app.router.lifespan_context = lifespan  # 시작과 종료시점 제어
+
+
+# JSON CRUD API
+JSON_FILE_PATH = 'data.json'
+
+'''
+JSON 파일이 없으면 생성
+'''
+if not os.path.exists(JSON_FILE_PATH):
+    with open(JSON_FILE_PATH, 'w') as f:
+        json.dump({}, f)
+
+'''
+JSON 파일에서 데이터 로드
+'''
+def load_json():
+    with open(JSON_FILE_PATH, 'r') as f:
+        return json.load(f)
+    
+'''
+JSON 파일에 데이터 저장
+'''
+def save_json(data):
+    with open(JSON_FILE_PATH, 'w') as f:
+        json.dump(data, f, indent = 4)
+
+'''
+특정 데이터 로드
+'''
+@app.get('/api/data/{key}')
+def get_data(key: str):
+    data = load_json()
+    if key not in data:
+        raise HTTPException(status_code=404, detail="Key not found")
+    return data[key]
+
+
+'''
+특정 데이터 추가
+'''
+@app.post('/api/data/{key}')
+def create_data(key: str, new_data: dict):
+    data = load_json()
+
+    if key in data:
+        raise HTTPException(status_code=400, detail="Key already exists")
+
+    data[key] = new_data
+    save_json(data)
+    return {"message": "Data created successfully"}
+
+'''
+특정 데이터 수정
+'''
+@app.post('/api/data/{key}')
+def update_data(key: str, updated_data: dict):
+    data = load_json()
+
+    if key not in data:
+        raise HTTPException(status_code=404, detail="Key not found")
+
+    data[key] = updated_data[key]
+    save_json(data)
+    return {"message": "Data updated"}
+
+'''
+특정 데이터 삭제
+'''
+@app.delete('/api/data/{key}')
+def delete_data(key: str):
+    data = load_json()
+
+    if key not in data:
+        raise HTTPException(status_code=404, detail="Key not found")
+
+    del data[key]
+    save_json(data)
+    return {"message": "Data deleted"}
+
 
 '''
 실행
