@@ -27,6 +27,8 @@ void setup() {
   Serial.begin(9600);  
   altSerial.begin(9600);
   
+  Serial.setTimeout(100);
+  altSerial.setTimeout(100);
   // DDS 모듈 초기화, 주파수 보정 후 작동
   DDS.begin(WCLK, FUUD, DATA, RESET);
   DDS.calibrate(trimFreq);
@@ -37,32 +39,40 @@ void setup() {
   // 가변 저항 초기화
   pot.begin(potval);
   delay(1000);
-  
+
   Serial.println("Start");
 }
 
 void loop(){
+  static String str = "";  // 누적된 데이터를 저장할 변수
+  
   // 소프트웨어 시리얼로부터 데이터가 수신된 경우
-  if (altSerial.available() > 0) {
-    // 버퍼에 문자열 있으면 읽고 출력
-    String str = altSerial.readString();
-    Serial.println(str);
+  while (altSerial.available() > 0) {
+    char c = altSerial.read();
+    if (c == '\n') {
+      Serial.println(str);
     
-    // 접두사가 P일때 이후 값을 저항값으로 설정 후 응답메세지 전송
-    if (str.startsWith("P")) {
-      potval = str.substring(1).toInt();
-      pot.set(potval);
-      msg = "Potentio set to " + String(potval);
-      Serial.println(msg);
-      altSerial.println(msg);
-    
-    // 접두사가 F일때 이후 값을 주파수로 설정 후 응답메세지 전송
-    } else if (str.startsWith("F")) {
-      freq = str.substring(1).toDouble();
-      DDS.setfreq(freq, phase);
-      msg = "Freq set to " + String(freq);
-      Serial.println(msg);
-      altSerial.println(msg);
+      // 접두사가 P일때 이후 값을 저항값으로 설정 후 응답메세지 전송
+      if (str.startsWith("P")) {
+        potval = str.substring(1).toInt();
+        pot.set(potval);
+        msg = "Potentio set to " + String(potval);
+        Serial.println(msg);
+        altSerial.println(msg);
+      
+      // 접두사가 F일때 이후 값을 주파수로 설정 후 응답메세지 전송
+      } else  if (str.startsWith("F")) {
+        freq = str.substring(1).toDouble();
+        Serial.println("=");
+        DDS.setfreq(freq, phase);
+        msg = "Freq set to " + String(freq);
+        Serial.println(msg);
+        altSerial.println(msg);
+      }
+
+      str = "";  // 명령어 처리 후 초기화
+    } else {
+      str += c;  // 데이터 누적
     }
   }
 }
