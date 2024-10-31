@@ -20,11 +20,24 @@ import torch
 
 from utils.irrigation_control import irrigation_control
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from app.routes import web_route
+
 obj_dict = {}  # 데이터 객체 저장용 딕셔너리 {id : 데이터}
 
 app = FastAPI()  # FastAPI 애플리케이션 생성
 logging.basicConfig(level=logging.INFO)  # 로그 레벨 설정
 logger = logging.getLogger(__name__)  # 로거 설정
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Set up Jinja2 templates
+templates = Jinja2Templates(directory="app/templates")
+
+# Include routers
+app.include_router(web_route.router)
 
 model_name = 'cnn_lite_model.pth'
 
